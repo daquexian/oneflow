@@ -18,6 +18,9 @@ limitations under the License.
 
 namespace oneflow {
 
+template<typename T>
+class CppTypeToOneDnnDtype;
+
 bool IsIntegralDataType(DataType data_type) {
   switch (data_type) {
 #define INTEGRAL_CASE(type_cpp, type_proto) \

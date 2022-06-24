@@ -110,6 +110,7 @@ void DtrCudaAllocator::UnMarkPiece(Piece* piece) {
 }
 
 void DtrCudaAllocator::DisplayAllPieces() {
+  std::cout << "pieces num: " << ptr2piece_.size() << std::endl;
   for (const auto& pair : ptr2piece_) {
     Piece* piece = pair.second;
     std::stringstream ss;
@@ -144,6 +145,10 @@ void DtrCudaAllocator::Display() {
             << ", total allocate bytes: " << bytes2Mb(total_allocate_bytes_) << "MB"
             << ", total deallocate bytes: " << bytes2Mb(total_deallocate_bytes_) << "MB"
             << ", total memory bytes: " << bytes2Mb(total_memory_bytes_) << "MB" << std::endl;
+}
+
+ptrdiff_t DtrCudaAllocator::get_offset(const char* mem_ptr) const {
+  return mem_ptr - (char*)memory_;
 }
 
 DtrCudaAllocator::Piece* DtrCudaAllocator::FindPiece(size_t aligned_size) {
@@ -361,12 +366,14 @@ DtrCudaAllocator::Piece* DtrCudaAllocator::EvictAndFindPiece(size_t size) {
     pieces_to_be_evicted.push_back(piece);
   }
   for (auto* piece : pieces_to_be_evicted) {
-    if (dtr::is_enabled_and_debug()) {
+    if (true) {
       int coeff = -1;
-      LOG(INFO) << "release dptr: " << (void*)piece->ptr << ", size: " << piece->size
+      std::cout << "release dptr: " << get_offset(piece->ptr) << ", size: " << piece->size
                 << ", cost: " << get_cost(piece->tensor, coeff) << ", compute op: "
-                << (piece->tensor != nullptr ? piece->tensor->compute_op_type_name() : "no tensor");
+                << (piece->tensor != nullptr ? piece->tensor->compute_op_type_name() : "no tensor") << std::endl;
     }
+  }
+  for (auto* piece : pieces_to_be_evicted) {
     size2 += piece->size;
     // NOTE: evict will trigger the merge and deallocation of neighbour free pieces,
     // currently deallocation only set tensor to nullptr, not real free,
@@ -396,6 +403,7 @@ void DtrCudaAllocator::Allocate(char** mem_ptr, std::size_t size) {
   CHECK(piece != nullptr) << "Error! : Out of memory when allocate size : " << size;
   CHECK_NOTNULL(piece->ptr);
   CHECK(ptr2piece_.find(piece->ptr) != ptr2piece_.end());
+  std::cout << "allocate offset: " << get_offset(piece->ptr) << ", size: " << piece->size << std::endl;
   *mem_ptr = piece->ptr;
   total_allocate_bytes_ += size;
 

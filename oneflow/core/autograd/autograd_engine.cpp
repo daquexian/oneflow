@@ -47,7 +47,7 @@ Maybe<void> CopyOrAccGrad(AutogradMeta* autograd_meta, bool autograd_mode) {
     if (new_grad) { current_grad = new_grad; }
   }
   if (autograd_meta->acc_grad()) {
-    DevVmDepObjectConsumeModeGuard guard(DevVmDepObjectConsumeMode::NONE);
+    // DevVmDepObjectConsumeModeGuard guard(DevVmDepObjectConsumeMode::NONE);
     // Should not inplace accumulate grad. For example,
     // >>> z = x + y
     // >>> p = x / z

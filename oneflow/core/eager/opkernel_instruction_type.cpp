@@ -57,6 +57,8 @@ struct LocalCallOpKernelUtil {
   // thus no recomputation is needed, but eviction is still possible.
   static inline Maybe<void> ComputeOperand(LocalCallOpKernelPhyInstrOperand* operand,
                                            DeviceCtx* device_ctx) {
+    std::cout << operand->shared_opkernel()->op_type_name() << " ComputeOperand" << std::endl;
+
     operand->mut_opkernel()->composed_attrs_for_scheduler_thread()->ResetPrior(operand->attrs());
     operand->set_user_opkernel(JUST(operand->mut_opkernel()->ChooseOpKernel(
         operand->inputs(), operand->outputs(), operand->consistent_tensor_infer_result())));
@@ -199,8 +201,8 @@ struct LocalCallOpKernelUtil {
     if (dtr::is_enabled()) {
       for (int i : operand->opkernel().input_tuple_indexes4mut_ibns()) {
         const std::string& op_type_name = operand->opkernel().op_type_name();
-        std::cout << "mutable! op: " << op_type_name << ", input " << i;
-        std::cout << "set it as non evictable" << std::endl;
+        // std::cout << "mutable! op: " << op_type_name << ", input " << i;
+        // std::cout << "set it as non evictable" << std::endl;
         GetDTRInputs(operand)[i]->set_evict_attr(false);
       }
     }
@@ -417,6 +419,10 @@ Maybe<void> _RecursivelyCompute(
       auto local_call_op = DTROp2LocalCallOp(input->compute_op());
       CHECK_NOTNULL_OR_RETURN(local_call_op);
 
+      std::cout << "going to recompute (No." << Global<dtr::TensorPool>::Get()->recompute_times()
+                << ") " << input->compute_op() << "(" << input->compute_op_type_name() << ") for "
+                << input << ", whose dptr is " << input->blob().dptr()
+                << ", is in memory: " << input->is_in_memory() << std::endl;
       if (dtr::is_enabled_and_debug()) {
         LOG(INFO) << "going to recompute " << input->compute_op() << "("
                   << input->compute_op_type_name() << ") for " << input << ", whose dptr is "
@@ -476,6 +482,8 @@ Maybe<void> _RecursivelyCompute(
 Maybe<void> RecursivelyCompute(
     const std::shared_ptr<vm::LocalCallOpKernelPhyInstrOperand>& operand,
     DeviceCtx* device_ctx) {
+  std::cout << operand->shared_opkernel()->op_type_name() << " run from user" << std::endl;
+
   int pinned_num = JUST(IncReferenceNumOfRecomputedTensor(operand));
   if (dtr::is_enabled_and_debug()) {
     LOG(INFO) << "pinning input tensors ended, pinned num: " << pinned_num;
@@ -518,6 +526,8 @@ Maybe<void> DTRComputeInstruction(vm::Instruction* instruction) {
 inline Maybe<void> LocalCallOpKernelUtil::ComputeInstruction(vm::Instruction* instruction) {
   auto operand = JUST(GetLocalCallOpKernelPhyInstrOperand(instruction));
   DeviceCtx* device_ctx = instruction->stream().device_ctx().get();
+  const double compute_time = JUST(GetEstimatedComputeTime(operand));
+  Global<dtr::TensorPool>::Get()->time_flies(compute_time);
   return ComputeOperand(operand.get(), device_ctx);
 }
 

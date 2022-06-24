@@ -59,6 +59,7 @@ struct TensorPool {
   void time_flies(double t);
   Maybe<void> display();
   Maybe<void> display2();
+  auto recompute_times() const { return num_recomputation_; }
   void add_recompute_times() { num_recomputation_++; }
   void merge(std::shared_ptr<vm::DisjNode>& x, std::shared_ptr<vm::DisjNode>& y);
   void pesudo_merge(std::shared_ptr<vm::DisjNode>& x, std::shared_ptr<vm::DisjNode>& y);

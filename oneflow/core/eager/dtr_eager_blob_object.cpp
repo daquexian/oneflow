@@ -114,7 +114,9 @@ void DTREagerBlobObject::unpin() {
 
 Maybe<void> DTREagerBlobObject::evict() {
   CHECK_OR_RETURN(is_evictable());
-  if (dtr::is_enabled_and_debug()) { LOG(INFO) << "evict " << this; }
+  static size_t c = 0;
+  std::cout << "evict ------------------" << std::endl;
+  // std::cout << "this:" << this << std::endl;
   if (blob().shape().elem_cnt() == 0) {
     if (dtr::is_enabled_and_debug()) {
       LOG(INFO) << "but elem_cnt is 0, shape is " << blob().shape() << ", skip";
